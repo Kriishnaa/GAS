@@ -255,6 +255,18 @@ function testingData(){
   var totalAmount = parseFloat(Math.round((txt.split("||")[2]).split(":")[1]*5)).toFixed(2);
   Logger.log(totalAmount);
 }
+
+/*
+
+var ColWidthArray = [200,200];
+var gtotalContent = "<br>"+MakeHTMLTable([["Grand Total [$] "],[masterTotal]],[200,200]);
+var contentArray = [itemsArray,priceArray,qtyaArray,subTotalArray,remarksArray];
+htmlEmailbody = gtotalContent+"<br>"+nDimHTMLTableColor(contentArray,ColWidthArray,["#90EE90","pink"]);
+
+*/
+
+
+
 function nDimHTMLTableColor(nDArray, ColWidthArray,colors) {
   var endofCell= "</td>";  
   //Logger.log(ColWidthArray.length);
