@@ -1,0 +1,68 @@
+function createQuiz() {
+  let file = SpreadsheetApp.getActive();
+  let sheet = file.getSheetByName("Sheet1");
+  
+  // Instead of getting individual ranges, it is more efficient
+  // to get all the data in one go, and then operate on the two
+  // dimensional array in memory.
+  let range = sheet.getDataRange();
+  let values = range.getValues();
+
+  // Here I am using a existing form to test, but you can just
+  // create a new one if you want.
+  var form = FormApp.openById("1ISOuIqTPg_d0rNOYvxohvmCR_AZnao8cbaJEhKDX56U");
+  
+  
+  form.setIsQuiz(true);
+
+  values.shift(); // Using this to remove the first row of headers
+
+  // Going through each line using a forEach to create a
+  // multiple choice question
+  values.forEach(q => {
+    let choices = [q[1], q[2], q[3], q[4]];
+    let title = q[0];
+    let feedback = q[5]
+
+    // Calling function to create multiple choice question
+    createShuffledChoices(form, title, choices, feedback)
+  });
+}
+
+
+function createShuffledChoices(form, title, choices, feedback){
+
+  let item = form.addMultipleChoiceItem();
+
+  item.setTitle(title)
+  .setPoints(1)
+
+  // Setting up the array that will be passed into item.setChoices()
+  let shuffledChoices = [];
+  // Making sure that the correct answer is only marked once
+  let correctAnswerChosen = false;
+
+  // I found I had to shuffle the questions within the process of
+  // creating choices as it made it easier to maintain the spreadsheet
+  for (let i = choices.length; i != 0; i--) {
+    let rand = Math.floor(Math.random() * (i - 1));
+    // If the first answer is chosen, it is the correct one.
+    if (rand == 0 && correctAnswerChosen == false) {
+      // Combination of push and splice to remove from ordered array
+      // to the shuffled one
+      shuffledChoices.push(item.createChoice(choices.splice(rand, 1)[0], true));
+      // Marking the correct answer as chosen,
+      // so that no others are marked correct.
+      correctAnswerChosen = true;
+    } else {
+      shuffledChoices.push(item.createChoice(choices.splice(rand, 1)[0]));
+    }  
+  }
+  
+  // Finally setting the choices.
+  item.setChoices(shuffledChoices);
+
+  // Creating the feedback
+  let formFeedback = FormApp.createFeedback().setText(feedback).build();
+  item.setFeedbackForIncorrect(formFeedback);
+}
