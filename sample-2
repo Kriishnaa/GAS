@@ -1,0 +1,191 @@
+1. Multiple Sheets Open Using Menu Bar
+This script allows you to open different sheets by selecting options from a custom menu:
+function one() {
+  sheetData(0);
+}
+
+function two() {
+  sheetData(87572974);
+}
+
+function sheetData(SheetID) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  for(var i in ss) {
+    if(ss[i].getSheetId() == SheetID) {
+      return SpreadsheetApp.setActiveSheet(ss[i]);
+      break;
+    }
+  }
+}
+Usage: Call one() or two() to activate specific sheets based on their ID.
+
+
+2. Spreadsheet Print Script
+This script generates a PDF of the active sheet and provides a download link in a UI dialog:
+function printPdf() {
+  SpreadsheetApp.flush();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getActiveSheet();
+  var gid = sheet.getSheetId();
+  var pdfOpts = '&size=A4&fzr=false&portrait=false&fitw=true&gridlines=true&printtitle=false&sheetnames=false&pagenum=UNDEFINED&attachment=false&gid=' + gid;
+  var Avals = sheet.getRange("B1:B").getValues();
+  var entryRows = Avals.filter(String).length;
+  var row2 = entryRows;
+  var printRange = '&c1=0' + '&r1=0' + '&c2=5' + '&r2=' + row2;
+  var url = ss.getUrl().replace(/edit$/, '') + 'export?format=pdf' + pdfOpts + printRange;
+  var app = UiApp.createApplication().setWidth(500).setHeight(250);
+  app.setTitle('Print this sheet');
+  var link = app.createAnchor('Download PDF', url).setTarget('_new');
+  app.add(link);
+  ss.show(app);
+}
+Usage: Run printPdf() to create and display a download link for the PDF version of the sheet.
+
+3. Auto Backup Google Sheet
+This script automatically creates a backup copy of the active Google Sheet:
+function makeCopy() {
+  var formattedDate = Utilities.formatDate(new Date(), "GMT", "yyyy-MM-dd' 'HH:mm:ss");
+  var name = SpreadsheetApp.getActiveSpreadsheet().getName() + " Copy " + formattedDate;
+  var destination = DriveApp.getFolderById("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+  var file = DriveApp.getFileById(SpreadsheetApp.getActiveSpreadsheet().getId());
+  file.makeCopy(name, destination);
+}
+Usage: Execute makeCopy() to create a backup copy of the current sheet.
+
+4. Google Spreadsheet Send PDF Mail
+This script sends the current spreadsheet as a PDF attachment to the user's email:
+function emailGoogleSpreadsheetAsPDF() {
+  var email = Session.getActiveUser().getEmail();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var subject = "PDF generated from spreadsheet " + ss.getName();
+  var body = "Install the <a href='http://www.labnol.org/email-sheet'>Email Spreadsheet add-on</a> for one-click conversion.";
+  var blob = DriveApp.getFileById(ss.getId()).getAs("application/pdf");
+  blob.setName(ss.getName() + ".pdf");
+  if (MailApp.getRemainingDailyQuota() > 0)
+    GmailApp.sendEmail(email, subject, body, {
+      htmlBody: body,
+      attachments: [blob]
+    });
+}
+Usage: Call emailGoogleSpreadsheetAsPDF() to email the PDF version of the spreadsheet.
+
+5. E-Commerce with Google Drive
+This script processes PayPal transactions by sending the purchased file to the buyer:
+var PAYPAL = [
+  ["product-001", "useful-websites-book.pdf"],
+  ["product-002", "linux-training-course.mp4"],
+  ["product-003", "steve-audio-book.mp3"],
+  ["product-004", "presentation-template.ppt"]
+];
+
+function PayPal() {
+  ScriptApp.newTrigger("myShop").timeBased().everyMinutes(5).create();
+}
+
+function myShop() {
+  var file, size, files, threads;
+  for (var p in PAYPAL) {
+    threads = GmailApp.search("is:unread from:paypal " + PAYPAL[p][0]);
+    if (threads.length > 0) {
+      files = DriveApp.searchFiles('title contains "' + PAYPAL[p][1] + '"');
+      if (files.hasNext()) {
+        file = files.next();
+        size = file.getSize() / (1024 * 1024);
+        for (var i = 0; i < threads.length; i++) {
+          var buyer = threads[i].getMessages()[0].getReplyTo();
+          var subject = "Thank you for your purchase";
+          var body = "Please download the file using the link below.\n\n";
+          if (size > 20) {
+            file.addViewer(buyer);
+            GmailApp.sendEmail(buyer, subject, body + file.getUrl());
+          } else {
+            GmailApp.sendEmail(buyer, subject, body, { attachments: file.getBlob() });
+          }
+          threads[i].markRead().moveToArchive();
+        }
+      }
+    }
+  }
+}
+Usage: Set up a time-based trigger to run myShop() for automatic processing.
+
+6. Send Mail with Attachment
+This script sends an email with a file attachment from Google Drive:
+function sendEmailWithAttachment() {
+  var recipient = "recipient@example.com";
+  var subject = "Email with Attachment";
+  var body = "This email contains an attachment.";
+  var file = DriveApp.getFileById("YOUR_FILE_ID");
+  var attachmentBlob = file.getBlob();
+  GmailApp.sendEmail(recipient, subject, body, {
+    attachments: [attachmentBlob]
+  });
+}
+Usage: Execute sendEmailWithAttachment() to email the specified file as an attachment.
+
+7. Dynamic Sub Menu Creating
+This script creates a dynamic sub-menu in the Google Sheets UI:
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  var menu = ui.createMenu('AAA ');
+  var subMenu = ui.createMenu('BBB');
+  for (i = 0; i < sheets.length; i++) {
+    subMenu.addItem(sheets[i].getName(), "test" + i);
+  }
+  menu.addSubMenu(subMenu).addToUi();
+}
+
+function test0(){ Browser.msgBox("ok");}
+function test1(){ Browser.msgBox("ok1");}
+function test2(){ Browser.msgBox("ok2");}
+function test3(){ Browser.msgBox("ok3");}
+function test4(){ Browser.msgBox("ok4");}
+Usage: Call onOpen() to create a menu with dynamic items for each sheet.
+
+8. Cloud Printing Script
+This script prints a Google Document using a specified printer:
+function test() {
+  Logger.log(search());
+  //Logger.log(printGoogleDoc("<docidhere>", "<printeridhere>"))
+}
+
+function printGoogleDoc(docid, printerid, optDocName) {
+  var doc = DriveApp.getFileById(docid);
+  var title = optDocName || doc.getName();
+  var ticket = {
+    version: "1.0",
+    print: {
+      color: {
+        type: "STANDARD_COLOR",
+        vendor_id: "Color"
+      },
+      duplex: {
+        type: "NO_DUPLEX"
+      }
+    }
+  };
+  var content = doc.getBlob();
+  var optContentType = "application/pdf";
+  var optTag = "";
+  return submit(printerid, title, ticket, content, optContentType, optTag);
+}
+Usage: Use printGoogleDoc() with appropriate parameters to print a document.
+
+9. Send Mail PDF File
+This script sends the active sheet as a PDF attachment in an email:
+function sendPdfByEmail() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var sheetId = sheet.getSheetId();
+  var pdfOpts = '&size=A4&fzr=false&portrait=false&fitw=true&gridlines=true&printtitle=false&sheetnames=false&pagenum=UNDEFINED&attachment=true&gid=' + sheetId;
+  var url = SpreadsheetApp.getActiveSpreadsheet().getUrl().replace(/edit$/, '') + 'export?format=pdf' + pdfOpts;
+  var recipient = "recipient@example.com";
+  var subject = "PDF Report from Google Sheet";
+  var body = "Please find the attached PDF report from the Google Sheet.";
+  var options = {
+    attachments: [UrlFetchApp.fetch(url).getBlob()]
+  };
+  MailApp.sendEmail(recipient, subject, body, options);
+}
+Usage: Run sendPdfByEmail() to email the PDF version of the active sheet.
