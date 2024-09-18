@@ -1,0 +1,175 @@
+-----------Queries and Solutions-------------
+1. This script is for combining multiple sheet data into one sheet:
+function combineSheetsData() {
+  var spreadsheetId = "YOUR_SPREADSHEET_ID"; // Replace with your spreadsheet ID
+  var targetSheetName = "CombinedData"; // Replace with the target sheet name
+  var sourceSheetNames = ["Sheet1", "Sheet2"]; // Replace with source sheet names
+
+  var spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+  var targetSheet = spreadsheet.getSheetByName(targetSheetName);
+
+  // Clear the target sheet before inserting new data
+  targetSheet.clearContents();
+
+  for (var i = 0; i < sourceSheetNames.length; i++) {
+    var sourceSheet = spreadsheet.getSheetByName(sourceSheetNames[i]);
+    var sourceData = sourceSheet.getDataRange().getValues();
+    
+    // Skip the header row if it exists (assuming it's the first row)
+    var startIndex = sourceData[0].length > 0 ? 1 : 0;
+
+    // Get the last row in the target sheet to append the data
+    var targetLastRow = targetSheet.getLastRow();
+
+    // Insert data from the source sheet into the target sheet
+    targetSheet.getRange(targetLastRow + 1, 1, sourceData.length - startIndex, sourceData[0].length)
+      .setValues(sourceData.slice(startIndex));
+  }
+}
+
+***********************
+2. How to Insert data into a sheet:
+function insertData() {
+  var spreadsheetId = "YOUR_SPREADSHEET_ID"; // Replace with your spreadsheet ID
+  var sheetName = "Sheet1"; // Replace with your sheet name
+  var valuesToInsert = [["John Doe", 25, "example@email.com"]]; // Data to insert
+
+  var spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+  var sheet = spreadsheet.getSheetByName(sheetName);
+
+  sheet.getRange(sheet.getLastRow() + 1, 1, valuesToInsert.length, valuesToInsert[0].length).setValues(valuesToInsert);
+}
+***********************
+3. How to add a custom menu in Sheets:
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('Custom Menu')
+      .addItem('Run Function 1', 'function1')
+      .addItem('Run Function 2', 'function2')
+      .addToUi();
+}
+
+function function1() {
+  SpreadsheetApp.getActiveSheet().getRange('A1').setValue('Function 1 ran!');
+}
+
+function function2() {
+  SpreadsheetApp.getActiveSheet().getRange('A2').setValue('Function 2 ran!');
+}
+***********************
+4. Hide Sheets Code:
+function hideSheetsBasedOnUser() {
+  var user = Session.getActiveUser().getEmail();
+  var targetSheetId = "740787435"; // Replace with your target sheet ID
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = spreadsheet.getSheets();
+
+  for (var i = 0; i < sheets.length; i++) {
+    var sheet = sheets[i];
+    var sheetId = sheet.getSheetId();
+
+    if (user === "mailuser@testmail.com" && sheetId === targetSheetId) {
+      sheet.hideSheet();
+    } else {
+      sheet.showSheet();
+    }
+  }
+}
+***********************
+5. Know Last Edit User:
+function onEdit(e) {
+  var range = e.range;
+  var user = Session.getActiveUser().getEmail();
+  
+  // Assuming your user-editable column is in column C
+  var userEditColumn = 3;
+  
+  // Check if the edited range is within the user-editable column
+  if (range.getColumn() === userEditColumn) {
+    range.setValue(user);
+  }
+}
+***********************
+6. Automatic Formula Copy Down:
+function autoFillFormula() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1"); // Replace with your sheet name
+  var startRow = 2; // Start from row 2
+  var startColumn = 1; // Start from column A
+  var numRows = sheet.getLastRow() - startRow + 1; // Calculate the number of rows
+  
+  // Get the formula from the first cell
+  var formula = sheet.getRange(startRow, startColumn).getFormula();
+  
+  // Fill down the formula in the specified range
+  sheet.getRange(startRow, startColumn, numRows).setFormula(formula);
+}
+***********************
+7. Calendar Date Book with Send Mail:
+function createCalendarEventAndSendEmail() {
+  var calendarId = "your_calendar_id@example.com"; // Replace with your calendar ID
+  var title = "Event Title";
+  var description = "Event Description";
+  var startDate = new Date("2023-08-31T10:00:00"); // Replace with your desired start date and time
+  var endDate = new Date("2023-08-31T11:00:00");   // Replace with your desired end date and time
+
+  var event = CalendarApp.getCalendarById(calendarId).createEvent(title, startDate, endDate, { description: description });
+
+  var recipientEmail = "recipient@example.com"; // Replace with the recipient's email address
+  var subject = "Event Reminder";
+  var body = "This is a reminder for the upcoming event: " + title + " on " + startDate;
+
+  GmailApp.sendEmail(recipientEmail, subject, body);
+}
+***********************
+8. How to Error Handle in Script:
+function myFunction() {
+  try {
+    var ui = SpreadsheetApp.getUi();
+    var userChoice = ui.alert(
+      'Please confirm',
+      'Are you sure you want to continue?',
+      ui.ButtonSet.YES_NO);
+      
+    if (userChoice === ui.Button.YES) {
+      Browser.msgBox("OK!!!"); 
+    } else {
+      Browser.msgBox("Cancel!!!");
+    }
+  } catch (e) {
+    var errorDetails = e.toString();
+    Logger.log(errorDetails);
+    MailApp.sendEmail(Session.getActiveUser().getEmail(), "Error Found", "Contact the Admin:\n\nError Details:\n" + errorDetails);
+  }
+}
+***********************
+9. Get & Set Formula Automatically:
+function onEdit(e) {
+  var mainSheet = e.source.getActiveSheet();
+  var col = e.range.getColumn();
+  var row = e.range.getRow();
+  
+  Logger.log(col + " :: " + row);
+  
+  if (col == 1) {
+    var fillDown = mainSheet.getRange(2, 2, row - 1).setFormula("=SQRT(A2)");
+    mainSheet.getRange("B2").copyTo(fillDown);
+  }
+  
+  if (col == 7) {
+    var fd = mainSheet.getRange(1, 8, row).setFormula("=(G1*G1)");
+    mainSheet.getRange("H1").copyTo(fd);
+  }
+}
+function aabb() {
+  var ss = SpreadsheetApp.getActiveSheet();
+  var col = ss.getActiveRange().getColumn();
+  var row = ss.getActiveRange().getRow();
+  
+  Logger.log(col + " :: " + row);
+  Logger.log(ss.getLastColumn());
+  Logger.log(ss.getLastRow() - 1);
+  
+  var aa = ss.getActiveCell().getColumn();
+  var bb = ss.getActiveRange().getColumn();
+  Logger.log(bb);
+}
