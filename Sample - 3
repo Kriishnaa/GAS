@@ -1,0 +1,211 @@
+1. Error Handling in Google Apps Script
+try {
+  // Your code here
+} catch (e) {
+  // Error handling code
+  Logger.log(e.toString()); // Logs the error message
+}
+Purpose: Handles exceptions in your code. If an error occurs within the try block, the catch block executes and logs the error.
+
+2. Fetch Same Sheet Data in Google Spreadsheet
+function fetchSheetByGID(gid) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var allSheets = ss.getSheets();
+  
+  for (var sheetNumber = 0; sheetNumber < allSheets.length; sheetNumber++) {
+    if (allSheets[sheetNumber].getSheetId() === gid) {
+      break;
+    }
+  }
+  
+  var sheet = allSheets[sheetNumber];
+  return sheet;
+}
+Purpose: Fetches a sheet by its ID from the active spreadsheet.
+
+3. Fetch Different Sheet Data in Google Spreadsheet
+function fetchSheetInGivenFileByGID(ss, gid) {
+  var allSheets = ss.getSheets();
+
+  for (var sheetNumber = 0; sheetNumber < allSheets.length; sheetNumber++) {
+    if (allSheets[sheetNumber].getSheetId() === gid) {
+      break;
+    }
+  }
+
+  var sheet = allSheets[sheetNumber];
+  return sheet;
+}
+Purpose: Fetches a sheet by its ID from a given spreadsheet file.
+
+4. Date Format Conversion to 'dd-MMM-yyyy'
+function ISTdate(z) {
+  if (IsNull(z)) {
+    // Handle null values if necessary
+  } else {
+    z = Utilities.formatDate(z, "IST", "dd MMM yyyy");
+  }
+  return z;
+}
+Purpose: Converts a date to the 'dd-MMM-yyyy' format. Replace IsNull(z) with your null-checking logic.
+
+5. Transpose Array
+function transpose(a) {
+  return a[0].map(function (_, c) {
+    return a.map(function (r) {
+      return r[c];
+    });
+  });
+}
+
+function specialTranspose(array) {
+  var returnArray = [];
+  var length = array.length;
+  var width = array[0].length;
+  
+  for (var i = 0; i < length; i++) {
+    for (var j = 0; j < width; j++) {
+      returnArray.push(array[i][j]);
+    }
+  }
+  
+  var flatArray = [returnArray];
+  return flatArray;
+}
+Purpose: Transposes a 2D array (flips rows and columns).
+
+6. Get Google Form Items
+function listFormItems() {
+  var form = FormApp.getActiveForm();
+  var items = form.getItems();
+  
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var title = item.getTitle();
+    var id = item.getId();
+    Logger.log(title + ': ' + id);
+  }
+}
+Purpose: Lists all items in a Google Form with their titles and IDs.
+
+7. HTML Table Format Email Send 2x2 Matrix
+function sendEmailWithTable() {
+  var content = ["content1", "content2", /* ... */]; // Placeholder content array
+
+  var totPointSelf = "total_points"; // Placeholder total points
+  
+  var TestArrayS = [
+    ["Self Review - Scorecard", "Team who filled the form", "Rules Knowledge and Use", "Fouls and Body Contact", "Fair-Mindedness", "Positive Attitude and Self-Control", "Communication", "Total Score - Self Review"],
+    ["", content[1], content[9], content[10], content[11], content[12], content[13], totPointSelf]
+  ];
+
+  var colWidthArrayS = [350, 200];
+  var emailBodyS = makeHTMLTable(TestArrayS, colWidthArrayS);
+
+  MailApp.sendEmail({
+    to: "recipient@example.com",
+    subject: "Scorecard Report",
+    body: emailBodyS,
+    htmlBody: emailBodyS
+  });
+}
+
+function makeHTMLTable(twoDArray, colWidthArray) {
+  var endOfCell = "</td>";
+  var colWidthOpener = "<col width=\"";
+  var colWidthCloser = "\">";
+  var tableHeader = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Table created using Google Spreadsheet</title></head><body><table cellspacing=\"0\" cellpadding=\"0\" dir=\"ltr\" border=\"1\" style=\"table-layout:fixed;font-size:10pt;font-family:arial,sans,sans-serif;width:0px;border-collapse:collapse;border:none\"><colgroup>";
+
+  var definingColumns = colWidthArray.map(function (width) {
+    return colWidthOpener + width + colWidthCloser;
+  }).join("");
+
+  tableHeader += definingColumns;
+  tableHeader += "</colgroup><tbody><tr style=\"height:21px\">";
+
+  var headerRowStyle = "<td style=\"overflow:hidden;padding:2px 3px;vertical-align:bottom;background-color:rgb(139,195,74);font-weight:bold\">";
+  var headerCols = twoDArray.map(function (row) {
+    return headerRowStyle + row[0] + endOfCell;
+  }).join("");
+
+  tableHeader += headerCols;
+
+  var endOfRow = "</tr>";
+  var startOfRow = "<tr style=\"height:21px\">";
+  var whiteRowCol = "<td style=\"overflow:hidden;padding:2px 3px;vertical-align:bottom\">";
+  var greenRowCol = "<td style=\"overflow:hidden;padding:2px 3px;vertical-align:bottom;background-color:rgb(238,247,227)\">";
+  var tableEnder = "</tbody></table></body></html></body></html>";
+
+  var fullHTMLTable = tableHeader;
+
+  for (var i = 1; i < twoDArray[0].length; i++) {
+    fullHTMLTable += startOfRow;
+    for (var j = 0; j < twoDArray.length; j++) {
+      fullHTMLTable += (i % 2) ? whiteRowCol + twoDArray[j][i] + endOfCell : greenRowCol + twoDArray[j][i] + endOfCell;
+    }
+    fullHTMLTable += endOfRow;
+  }
+  fullHTMLTable += tableEnder;
+
+  return fullHTMLTable;
+}
+Purpose: Sends an email with an HTML table formatted as a 2x2 matrix.
+
+8. Numbers to Indian Decimal Conversion
+function numberToIndianNoDec(number) {
+  var parts = number.toString().split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  parts[1] = ((parts[1] || "") + "00").slice(0, 0);
+  return parts[0];
+}
+
+function numberToIndian2Dec(number) {
+  var parts = number.toString().split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  parts[1] = ((parts[1] || "") + "00").slice(0, 2);
+  return parts.join(".");
+}
+Purpose: Converts numbers to the Indian number format with and without decimal places.
+
+9. Confirmation Dialog in Google Apps Script
+var cName = "Text...."; 
+var proceed = Browser.msgBox("Add to the master list?", cName, Browser.Buttons.YES_NO);
+if (proceed == 'yes') {
+  // Code to execute if user clicks "Yes"
+} else {
+  Browser.msgBox("Make desired changes and reprocess.");
+}
+Purpose: Displays a confirmation dialog to the user and executes code based on their response.
+
+10. JavaScript Array Methods: push(), pop(), shift(), unshift()
+shift(): Removes the first element from an array and returns it.
+var data = ["A", "B", "C"];
+data.shift(); // Removes "A"
+unshift(): Adds one or more elements to the beginning of an array.
+javascript
+Copy code
+var data = ["X"];
+data.unshift("B", "C"); // Adds "B" and "C" to the beginning
+push(): Adds one or more elements to the end of an array.
+javascript
+Copy code
+var data = ["X"];
+data.push("B", "C"); // Adds "B" and "C" to the end
+pop(): Removes the last element from an array and returns it.
+javascript
+Copy code
+var data = ["A", "B", "C"];
+data.pop(); // Removes "C"
+
+11. Provide Data Validation in Google Sheets
+function applyDataValidation() {
+  var fromIngredientMaster = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("IngredientMaster");
+  var toSheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+  var noOfRows = fromIngredientMaster.getLastRow() - 2;
+  var sourceRange = fromIngredientMaster.getRange(3, 1, noOfRows, 1).getValues().flat();
+
+  var validation = SpreadsheetApp.newDataValidation().requireValueInList(sourceRange).build();
+  toSheet.getRange("B2:B").setDataValidation(validation);
+}
+Purpose: Applies data validation to a specified range in a Google Sheet based on a list from another sheet.
