@@ -1,0 +1,165 @@
+------------Code.gs----------
+function onOpen() {
+  SpreadsheetApp.getUi() // Or DocumentApp or FormApp.
+    .createMenu('Sidebar Menu')
+    .addItem('Show sidebar', 'showSidebar')
+    .addToUi();
+}
+
+function showSidebar() {
+  var ui = HtmlService.createTemplateFromFile('sidebar') // Correct file name 'sidebar'
+    .evaluate()
+    .setSandboxMode(HtmlService.SandboxMode.IFRAME) // Use iframe mode for sandboxing
+    .setTitle('Table of Contents - Workbook Sheets');
+
+  SpreadsheetApp.getUi().showSidebar(ui);
+}
+
+function getSheetNames() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+
+  return sheetNamesIds(sheets);
+}
+
+function sheetNamesIds(sheets) {
+  var indexOfSheets = [];
+
+  sheets.forEach(function(sheet){
+    indexOfSheets.push([sheet.getSheetName(), sheet.getSheetId()]);
+  });
+
+  return indexOfSheets; 
+}
+
+function returnListItems(text) {
+  
+  var sheetNames = getSheetNames();
+
+  // Filter the sheet names based on the search text if provided
+  if (text) {
+    sheetNames = sheetNames.filter(function(n) {
+      return n[0].toLowerCase().includes(text.toLowerCase());
+    });
+  }
+ 
+  // Create HTML list items dynamically
+  var htmlString = sheetNames.map(function(d) {
+    return `
+      <li> 
+        <input
+         type="button"
+         value="${d[0]}"
+         onclick="google.script.run.setActiveByName('${d[0]}')"/>
+      </li>&nbsp;`;
+  }).join('');
+ 
+  return htmlString;
+}
+
+function setActiveByName(name) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  SpreadsheetApp.setActiveSheet(sheet); // Set the active sheet to the selected one
+}
+
+function doGet() {
+  var template = HtmlService.createTemplateFromFile('sidebar'); // Load the sidebar HTML
+  var html = template.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME); // Use IFRAME mode
+  return html;
+}
+
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+
+------------sidebar.html----------
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <script>
+      // Function to remove an element from the DOM
+      function removeElement(elementId) {
+        var element = document.getElementById(elementId);
+        if (element) {
+          element.parentNode.removeChild(element);
+        }
+      }
+
+      // Function to call the server-side Google Apps Script to build the sheet list
+      function buildList(text) {
+        // Check if the text is defined and not null
+        if (typeof text === 'undefined' || text === null) {
+          text = ''; // Default to an empty string if text is not provided
+        }
+
+        google.script.run
+          .withSuccessHandler(onSuccess)  // Call the function to handle success
+          .withFailureHandler(onError)    // Optional: Handle any errors from server-side
+          .returnListItems(text);         // Call the server-side function to get the sheet names
+      }
+
+      // Optional: Add an error handler function to handle any failures
+      function onError(error) {
+        console.error('Error occurred: ' + error);
+        document.getElementById("list").innerHTML = 'An error occurred while fetching the list.';
+      }
+
+
+      // Function to handle the returned list from server-side
+      function onSuccess(result) {
+       
+        var element = document.getElementById("list");
+
+        // Check if the element with ID "list" exists
+        if (element) {
+          if (result && result.trim() !== '') {
+            // Populate the list dynamically if result is not empty
+            element.innerHTML = '<ul>' + result + '</ul>';
+          } else {
+            // Show a message if no result is returned
+            element.innerHTML = 'No sheets found matching your search.';
+          }
+           console.log(element);
+        } else {
+          console.error('Element with ID "list" not found.');
+        }
+      }
+
+
+      // Function to trigger search and update the list based on search input
+      function getTextAndSearch() {
+        
+        var text = document.getElementById("text-search").value;
+        var element = document.getElementById("list").innerHTML = '';
+        
+        buildList(text); // Build the list with search
+      }
+
+      // Function to load all sheets when the sidebar loads
+      function loadList() {
+        google.script.run
+          .withSuccessHandler(onSuccess)
+          .returnListItems(); // Call the server-side to load all sheets initially
+      }
+    </script>
+
+    <!-- Sidebar structure -->
+    <sidebar id="sidebar" style="width: 250px; padding: 15px; background-color: #f4f4f4; border-right: 1px solid #ccc; height: 100vh; position: fixed;">
+        <input type="text" id="text-search" placeholder="Search for a sheet" 
+              style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px;" />
+        <input type="button" value="Search" onclick="getTextAndSearch()" 
+              style="width: 100%; padding: 10px; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;" />
+        <div id="list" style="margin-top: 20px; max-height: calc(100vh - 120px); overflow-y: auto;">
+            <!-- List of sheets will be dynamically inserted here -->
+        </div>
+    </sidebar>
+    <script>
+      // Load the initial sheet list on sidebar load
+      loadList();
+    </script>
+  </body>
+</html>
