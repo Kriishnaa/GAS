@@ -1,0 +1,78 @@
+//New Google Sheet Creation Along With 12 Months
+const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function createSpreadsheet() {
+  let folderId = '14AgNrTGXCje3IstPURfan-CQLNQ63LdS'; // Replace with your folder ID
+  let folder = DriveApp.getFolderById(folderId);
+  let spreadsheet = SpreadsheetApp.create('Year Planning Details');
+  let file = DriveApp.getFileById(spreadsheet.getId());
+  file.moveTo(folder);
+
+  let existingSheets = spreadsheet.getSheets().map(sheet => sheet.getName());
+
+  months.forEach(function(month) {
+    let sheet;
+    if (!existingSheets.includes(month)) {
+      sheet = spreadsheet.insertSheet(month);
+    } else {
+      sheet = spreadsheet.getSheetByName(month);
+    }
+
+    // Clear any existing content in the sheet
+    sheet.clear();
+
+    // Add column headers
+    const headers = ['Date', 'Day', 'ToDo', 'Status', 'Remarks'];
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold'); // Make headers bold
+    // Freeze first row and first two columns
+    sheet.setFrozenRows(1);
+    sheet.setFrozenColumns(2);
+    // Get current year and number of days in the month
+    let year = new Date().getFullYear();
+    let monthIndex = months.indexOf(month);
+    let daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+    // Add dates and days
+    let data = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      let date = new Date(year, monthIndex, day);
+      let dateString = Utilities.formatDate(date, Session.getScriptTimeZone(), 'yyyy-MM-dd'); // Format date as YYYY-MM-DD
+      let dayName = Utilities.formatDate(date, Session.getScriptTimeZone(), 'EEEE'); // Get the day name
+      data.push([dateString, dayName, '', '', '']);
+    }
+
+    // Write data to the sheet
+    sheet.getRange(2, 1, data.length, headers.length).setValues(data);
+
+    // Create dropdown for the "Status" column
+    let statusRange = sheet.getRange(2, 4, daysInMonth);
+    let rule = SpreadsheetApp.newDataValidation()
+        .requireValueInList(['Done', 'In-Progress', 'Pending', '-'], true)
+        .build();
+    statusRange.setDataValidation(rule);
+
+    // Delete any extra rows and columns
+    let lastRow = sheet.getMaxRows();
+    let lastColumn = sheet.getMaxColumns();
+
+    if (lastRow > daysInMonth + 1) {
+      sheet.deleteRows(daysInMonth + 2, lastRow - daysInMonth - 1);
+    }
+    if (lastColumn > headers.length) {
+      sheet.deleteColumns(headers.length + 1, lastColumn - headers.length);
+    }
+  });
+
+  const sheets = spreadsheet.getSheets();
+
+  // Iterate through the sheets to find the one with the target GID
+  for (let i = 0; i < sheets.length; i++) {
+    // Check if this sheet's GID matches the target GID
+    if (sheets[i].getSheetId() === 0) {
+      // Rename the sheet
+      sheets[i].setName("ReadMe");
+      break;
+    }
+  }
+}
