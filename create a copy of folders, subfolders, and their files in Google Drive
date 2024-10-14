@@ -1,0 +1,44 @@
+function copyFolderAndFiles() {
+  const sourceFolderId = 'FOLDER_ID'; // Replace with the ID of the folder you want to copy
+  const targetFolderName = 'Copy of ' + getFolderName(sourceFolderId); // Name of the new folder
+  const targetFolder = DriveApp.createFolder(targetFolderName);
+  
+  // Create a new Google Sheet to store links
+  const ss = SpreadsheetApp.create('Folder and File Links');
+  const sheet = ss.getActiveSheet();
+  sheet.appendRow(['Type', 'Name', 'Link']); // Header row
+  
+  // Copy folder and its files
+  copyFolder(sourceFolderId, targetFolder, sheet);
+  
+  Logger.log('New folder created: ' + targetFolder.getUrl());
+  Logger.log('Links sheet created: ' + ss.getUrl());
+}
+
+function copyFolder(sourceFolderId, targetFolder, sheet) {
+  const sourceFolder = DriveApp.getFolderById(sourceFolderId);
+  
+  // Copy files in the source folder
+  const files = sourceFolder.getFiles();
+  while (files.hasNext()) {
+    const file = files.next();
+    const copiedFile = file.makeCopy(file.getName(), targetFolder);
+    sheet.appendRow(['File', copiedFile.getName(), copiedFile.getUrl()]);
+  }
+  
+  // Recursively copy subfolders
+  const subfolders = sourceFolder.getFolders();
+  while (subfolders.hasNext()) {
+    const subfolder = subfolders.next();
+    const newSubfolder = targetFolder.createFolder(subfolder.getName());
+    sheet.appendRow(['Folder', newSubfolder.getName(), newSubfolder.getUrl()]);
+    
+    // Recursively copy contents of subfolder
+    copyFolder(subfolder.getId(), newSubfolder, sheet);
+  }
+}
+
+function getFolderName(folderId) {
+  const folder = DriveApp.getFolderById(folderId);
+  return folder.getName();
+}
